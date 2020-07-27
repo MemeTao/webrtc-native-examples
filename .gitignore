@@ -1,4 +1,7 @@
 *.log
+.cproject
+.project
+.settings/*
 *.cprocject
 *.a
 *.dll
