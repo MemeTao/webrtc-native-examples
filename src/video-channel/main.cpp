@@ -16,6 +16,7 @@
 #include "media/base/video_broadcaster.h"
 
 #include "pc/video_track_source.h"
+#include "i420_creator.h"
 
 static auto g_signal_thread = rtc::Thread::CreateWithSocketServer();
 
@@ -46,8 +47,19 @@ rtc::scoped_refptr<webrtc::PeerConnectionInterface> get_default_peer_connection(
 
 class VideoSourceMock : public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
-    void start();
-    void stop();
+    VideoSourceMock()
+        :i420_creator_(std::bind(&VideoSourceMock::on_frame,
+                this, std::placeholders::_1))
+    {
+        i420_creator_.run();
+    }
+
+    void on_frame(I420Creator::I420Frame frame)
+    {
+        webrtc::VideoFrame videoframe;
+        //TODO:convert i420 to 'videoframe'
+        broadcaster_.OnFrame(videoframe);
+    }
 private:
     void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                                  const rtc::VideoSinkWants& wants) override {
@@ -61,6 +73,7 @@ private:
 private:
     rtc::VideoBroadcaster broadcaster_;
     cricket::VideoAdapter video_adapter_;
+    I420Creator i420_creator_;
 };
 
 class VideoTrack : public webrtc::VideoTrackSource {
@@ -95,8 +108,10 @@ class SimpleClient : public webrtc::PeerConnectionObserver,
     public webrtc::CreateSessionDescriptionObserver{
 public:
     SimpleClient(bool sending) {
-        if(sending) {
+        if(!sending) {
             video_receiver_ = std::make_shared<VideoStreamReceiver>();
+        }else{
+            ;
         }
     }
     ~SimpleClient() {
