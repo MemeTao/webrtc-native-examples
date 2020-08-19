@@ -59,6 +59,7 @@ public:
         webrtc::VideoFrame videoframe;
         //TODO:convert i420 to 'videoframe'
         broadcaster_.OnFrame(videoframe);
+
     }
 private:
     void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
@@ -191,6 +192,8 @@ private:
 
 int main()
 {
+    rtc::LogMessage::ConfigureLogging("none debug tstamp thread");
+
     rtc::scoped_refptr<SimpleClient> sender = new rtc::RefCountedObject<SimpleClient>();
     rtc::scoped_refptr<SimpleClient> receiver = new rtc::RefCountedObject<SimpleClient>();
 

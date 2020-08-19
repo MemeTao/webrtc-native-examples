@@ -1,4 +1,5 @@
 #include "i420_creator.h"
+#include <cassert>
 #include <future>
 #include <chrono>
 
@@ -33,7 +34,61 @@ void I420Creator::run(int fps)
     future.wait();
 }
 
+uint8_t limit(int& v, int min, int max)
+{
+    v = std::min(max, v);
+    v = std::max(min, v);
+    return static_cast<uint8_t>(v);
+}
+
+void rgb_to_i420(const uint8_t* rgb, uint8_t* yuv, size_t size)
+{
+    assert(size >= 3);
+    auto r = rgb[0];
+    auto g = rgb[1];
+    auto b = rgb[2];
+
+    int y = ((66  * r + 129 * g + 25  * b + 128) >> 8) + 16;
+    int u = ((-38 * r - 74  * g + 112 * b + 128) >> 8) + 128;
+    int v = ((112 * r - 94  * g - 18  * b + 128) >> 8) + 128;
+
+    yuv[0] = limit(y, 0, 255);
+    yuv[1] = limit(u, 0, 255);
+    yuv[2] = limit(v, 0, 255);
+}
+
 I420Creator::I420Frame I420Creator::process()
 {
-    return I420Frame();
+    const uint8_t colors[3][6] =
+    {                   //RGB
+        {255, 0, 0},    //red
+        {255, 165, 0},  //orange
+        {255, 255, 0},  //yellow
+        {0, 255, 0},    //Green
+        {0, 0, 255},    //Blue
+        {160,32,240}    //purple
+    };
+    static int i = 0;
+    i = (i++) % 6;
+    auto frame = std::make_shared<std::vector<uint8_t>>();
+    frame->resize(static_cast<size_t>(w_ * h_ * 1.5));
+    uint8_t* buffer_y = frame->data();
+    uint8_t* buffer_u = frame->data() + w_*h_;
+    uint8_t* buffer_v = frame->data() + w_*h_ / 4;
+    for(size_t i = 0 ;i < w_; i++)
+    {
+        for(size_t j = 0; j < h_; j++)
+        {
+            const auto& rgb = colors[i];
+            uint8_t yuv[3] = {0};
+            rgb_to_i420(rgb, yuv, 3);
+            *(buffer_y++) = yuv[0];
+            if(j % 2 == 0 && i %2 == 0)
+            {
+                *(buffer_u++) = yuv[1];
+                *(buffer_v++) = yuv[2];
+            }
+        }
+    }
+    return frame;
 }
