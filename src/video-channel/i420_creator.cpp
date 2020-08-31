@@ -14,6 +14,7 @@ I420Creator::~I420Creator()
 void I420Creator::run(int fps)
 {
     if(running_ || fps == 0) {
+        assert(false);
         return;
     }
     running_ = true;
@@ -59,7 +60,7 @@ void rgb_to_i420(const uint8_t* rgb, uint8_t* yuv, size_t size)
 
 I420Creator::I420Frame I420Creator::process()
 {
-    const uint8_t colors[3][6] =
+    const uint8_t colors[6][3] =
     {                   //RGB
         {255, 0, 0},    //red
         {255, 165, 0},  //orange

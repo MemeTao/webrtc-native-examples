@@ -1,5 +1,6 @@
 #include <iostream>
-
+#include <chrono>
+#include "api/video/i420_buffer.h"
 #include "api/create_peerconnection_factory.h"
 
 #include "api/audio_codecs/audio_decoder_factory.h"
@@ -18,16 +19,10 @@
 #include "pc/video_track_source.h"
 #include "i420_creator.h"
 
+
 static auto g_signal_thread = rtc::Thread::CreateWithSocketServer();
 
-static auto g_peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-              nullptr /* network_thread */, nullptr /* worker_thread */,
-              g_signal_thread.get()/* signaling_thread */, nullptr /* default_adm */,
-              webrtc::CreateBuiltinAudioEncoderFactory(),
-              webrtc::CreateBuiltinAudioDecoderFactory(),
-              webrtc::CreateBuiltinVideoEncoderFactory(),
-              webrtc::CreateBuiltinVideoDecoderFactory(),
-              nullptr /* audio_mixer */, nullptr /* audio_processing */);
+static rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> g_peer_connection_factory = nullptr;
 
 rtc::scoped_refptr<webrtc::PeerConnectionInterface> get_default_peer_connection(
         rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory,
@@ -45,22 +40,43 @@ rtc::scoped_refptr<webrtc::PeerConnectionInterface> get_default_peer_connection(
     return peer_connection;
 }
 
+static int64_t cur_time()
+{
+    int64_t time_cur = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    return time_cur;
+}
+
 class VideoSourceMock : public rtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
     VideoSourceMock()
         :i420_creator_(std::bind(&VideoSourceMock::on_frame,
                 this, std::placeholders::_1))
     {
+        i420_creator_.set_resolution(1920, 1080);
         i420_creator_.run();
     }
 
     void on_frame(I420Creator::I420Frame frame)
     {
-        webrtc::VideoFrame videoframe;
-        //TODO:convert i420 to 'videoframe'
-        broadcaster_.OnFrame(videoframe);
+        static int i = 0;
+        std::cout<<"[info] sending frame, no:"<<i++<<std::endl;
 
+        rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+                webrtc::I420Buffer::Copy(1920, 1080,
+                        frame->data(), 1920,
+                        frame->data() + 1920*1080, (1080 + 1) / 2 ,
+                        frame->data() + 1920*1080 + 1920*1080 / 4, (1080 + 1) / 2);
+        webrtc::VideoFrame captureFrame = webrtc::VideoFrame::Builder()
+                .set_video_frame_buffer(buffer)
+                .set_timestamp_rtp(0)
+                .set_timestamp_ms(rtc::TimeMillis())
+                .set_rotation(webrtc::kVideoRotation_0).build();
+        captureFrame.set_ntp_time_ms(cur_time());
+        //TODO:convert i420 to 'videoframe'
+        broadcaster_.OnFrame(captureFrame);
     }
+
 private:
     void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                                  const rtc::VideoSinkWants& wants) override {
@@ -79,6 +95,11 @@ private:
 
 class VideoTrack : public webrtc::VideoTrackSource {
 public:
+    VideoTrack()
+       : webrtc::VideoTrackSource(false)
+    {
+        my_source_ = std::make_unique<VideoSourceMock>();
+    }
 protected:
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
         return my_source_.get();
@@ -153,7 +174,7 @@ protected:
         auto track = receiver->track().get();
         std::cout<<"[info] on add track,kind:"<<track->kind()<<std::endl;
         if(track->kind() == "video" && video_receiver_) {
-            auto cast_track = static_cast<webrtc::VideoTrackSource*>(track);
+            auto cast_track = static_cast<webrtc::VideoTrackInterface*>(track);
             cast_track->AddOrUpdateSink(video_receiver_.get(), rtc::VideoSinkWants());
         }
     }
@@ -192,10 +213,20 @@ private:
 
 int main()
 {
+    g_signal_thread->Start();
+    g_peer_connection_factory = webrtc::CreatePeerConnectionFactory(
+                  nullptr /* network_thread */, nullptr /* worker_thread */,
+                  g_signal_thread.get()/* signaling_thread */, nullptr /* default_adm */,
+                  webrtc::CreateBuiltinAudioEncoderFactory(),
+                  webrtc::CreateBuiltinAudioDecoderFactory(),
+                  webrtc::CreateBuiltinVideoEncoderFactory(),
+                  webrtc::CreateBuiltinVideoDecoderFactory(),
+                  nullptr /* audio_mixer */, nullptr /* audio_processing */);
+
     rtc::LogMessage::ConfigureLogging("none debug tstamp thread");
 
-    rtc::scoped_refptr<SimpleClient> sender = new rtc::RefCountedObject<SimpleClient>();
-    rtc::scoped_refptr<SimpleClient> receiver = new rtc::RefCountedObject<SimpleClient>();
+    rtc::scoped_refptr<SimpleClient> sender = new rtc::RefCountedObject<SimpleClient>(true);
+    rtc::scoped_refptr<SimpleClient> receiver = new rtc::RefCountedObject<SimpleClient>(false);
 
     auto video_souce = new rtc::RefCountedObject<VideoTrack>();
     auto video_track = g_peer_connection_factory->CreateVideoTrack("video", video_souce);
