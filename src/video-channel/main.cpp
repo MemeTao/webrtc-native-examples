@@ -238,6 +238,9 @@ int main()
     sender->bind_peerconnection(peer_connection1);
     receiver->bind_peerconnection(peer_connection2);
 
+    sender->set_other(receiver.get());
+    receiver->set_other(sender.get());
+
     peer_connection1 = nullptr;  //decrease ref
     peer_connection2 = nullptr;  //decrease ref
 

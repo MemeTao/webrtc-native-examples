@@ -80,7 +80,7 @@ I420Creator::I420Frame I420Creator::process()
     {
         for(size_t j = 0; j < h_; j++)
         {
-            const auto& rgb = colors[i];
+            const auto& rgb = colors[i % 6];
             uint8_t yuv[3] = {0};
             rgb_to_i420(rgb, yuv, 3);
             *(buffer_y++) = yuv[0];
