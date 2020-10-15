@@ -151,7 +151,7 @@ protected:
          * ....
          * ....
          * ----------------------------------------> 1/2 rtt
-         * ok,remote client have received sdp now and deliver it webrtc
+         * ok,remote client have received sdp now and deliver it to webrtc
          */
         auto sdp_cp = webrtc::CreateSessionDescription(desc->GetType(), sdp_str, nullptr);
         other_->received_sdp(sdp_cp.release());
