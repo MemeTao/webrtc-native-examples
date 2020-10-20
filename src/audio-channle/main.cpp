@@ -17,7 +17,6 @@
 #include "media/base/video_broadcaster.h"
 
 #include "pc/video_track_source.h"
-#include "i420_creator.h"
 
 
 static auto g_signal_thread = rtc::Thread::CreateWithSocketServer();
@@ -66,6 +65,7 @@ public:
 	                      size_t number_of_frames)
 	  {
 		  //we can handle audio data here;
+		  std::cout<<"[info] recv an audio frame"<<std::endl;
 	  }
 };
 
