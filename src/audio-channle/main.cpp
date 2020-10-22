@@ -137,6 +137,9 @@ protected:
 
         std::string sdp_str;
         desc->ToString(&sdp_str);
+        if(desc->type() == "offer") {
+        	std::cout<<"[info] " <<sdp_str<<std::endl;
+        }
         /* sending sdp to remote */
         auto sdp_cp = webrtc::CreateSessionDescription(desc->GetType(), sdp_str, nullptr);
         other_->on_sdp(sdp_cp.release());
@@ -170,7 +173,8 @@ int main()
     rtc::scoped_refptr<SimpleClient> sender = new rtc::RefCountedObject<SimpleClient>(true);
     rtc::scoped_refptr<SimpleClient> receiver = new rtc::RefCountedObject<SimpleClient>(false);
 
-    auto audio_track = g_peer_connection_factory->CreateAudioTrack("audio", nullptr);
+    auto audio_track = g_peer_connection_factory->CreateAudioTrack("audio",
+    		g_peer_connection_factory->CreateAudioSource(cricket::AudioOptions()));
     auto peer_connection1 = get_default_peer_connection(g_peer_connection_factory, g_signal_thread.get(), sender.get());
     peer_connection1->AddTrack(audio_track, {"stream1"});
 
