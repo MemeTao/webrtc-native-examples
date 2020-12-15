@@ -4,6 +4,41 @@ samples that demonstrate how to use webrtc native code(**Still under development
 
 And there is a supporting tutorial to help readers better understand the source code,but only the Chinese version.
 
+### how to build
+
+All examples based on [goole webrtc native code](https://webrtc.googlesource.com/src).
+
+commit id: **cccd55094dbec7b8a0f7823ecf9c69d674200d87**.(As long as the api is the same, the others may be fine)
+
+I think you can build libwebrtc.a youself.
+
+#### RTTI
+
+rtti is turned off by default, so please do not enable it when you build webrtc.
+
+If we want to build 'data-channle', move libwebrtc.a to build path, for example:
+
+```shell
+$ move libwebrtc.a src/datachannel
+$ cd src/datachannle
+$ ls
+libwebrtc.a  main.cpp
+```
+
+then using following cmds to build:
+```shell
+$ g++ main.cpp libwebrtc.a  \
+    -I ../../third_party/webrtc/  \
+    -I ../../third_party/webrtc/third_party/abseil-cpp/ \
+    -DWEBRTC_POSIX  \
+    -lpthread -ldl
+```
+run:
+```shell
+$./a.out
+ [info] mess:hello,I'm A
+ [info] mess:hello,I'm B
+```
 
 ## 帮助文档(tutorial)
 
@@ -13,7 +48,7 @@ And there is a supporting tutorial to help readers better understand the source 
 * 2.建立并传输视频流
 * 3.建立并传输音频流
 
-### 以下内容正在补充(2020.10.22)
+### 以下内容正在补充(2020.12.15)
 
 #### 源码分析-初级篇
 
