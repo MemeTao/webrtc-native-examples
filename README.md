@@ -4,7 +4,7 @@ samples that demonstrate how to use webrtc native code(**Still under development
 
 And there is a supporting tutorial to help readers better understand the source code,but only the Chinese version.
 
-### how to build
+### how to build webrtc
 
 All examples based on [goole webrtc native code](https://webrtc.googlesource.com/src).
 
@@ -16,7 +16,19 @@ I think you can build libwebrtc.a youself.
 
 rtti is turned off by default, so please do not enable it when you build webrtc.
 
-If we want to build 'data-channle', move libwebrtc.a to build path, for example:
+### build
+
+get source code:
+
+```shell
+$ git clone https://github.com/MemeTao/webrtc-native-samples webrtc-samples
+$ cd  webrtc-samples
+$ git submodule init
+$ git submodule sync
+$ git submodule udpate
+```
+
+for example if we want to build 'data-channle':
 
 ```shell
 $ move libwebrtc.a src/datachannel
@@ -24,8 +36,7 @@ $ cd src/datachannle
 $ ls
 libwebrtc.a  main.cpp
 ```
-
-then using following cmds to build:
+using following cmds to build:
 ```shell
 $ g++ main.cpp libwebrtc.a  \
     -I ../../third_party/webrtc/  \
