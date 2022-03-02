@@ -1,6 +1,6 @@
 # webrtc-native-samples
 
-samples that demonstrate how to use webrtc native code(**Still under development**).
+examples that demonstrate how to use webrtc native code(**Still under development**).
 
 And there is a supporting tutorial to help readers better understand the source code,but only the Chinese version.
 
